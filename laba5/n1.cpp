@@ -1,7 +1,7 @@
 //
 // Created by Антон Деев
 //
-#include "head.cpp"
+#include "head.h"
 
 void SortByName(vector<Student>& stud) {
     for (int i=0; i < stud.size(); i++) {
