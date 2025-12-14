@@ -1,9 +1,6 @@
 //
 // Created by Антон Деев
 //
-//
-// Created by donts on 25.11.2025.
-//
 
 #ifndef laba5
 #define laba5
