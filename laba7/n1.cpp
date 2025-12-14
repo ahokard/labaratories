@@ -1,7 +1,7 @@
 //
 // Created by Антон Деев
 //
-#include "head.cpp"
+#include "head.h"
 
 void saveToFile(const string& filename, const vector<string>& data) {
     ofstream out(filename);
