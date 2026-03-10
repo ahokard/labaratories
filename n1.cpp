@@ -1,169 +1,280 @@
 #include <iostream>
-#include <algorithm>
 #include <stdexcept>
+#include <algorithm>
+#include <iterator>
+#include <cstddef>
 
 template <class T>
 class vector {
 private:
-    T* data;
-    size_t size;
-    size_t capacity;
+    T* arr;
+    size_t sz;
+    size_t cap;
+
 public:
-    vector() {
-        size = 0;
-        capacity = 0;
-        data = nullptr;
-    }
+    using value_type = T;
 
-    vector(const vector& other) {
-        if (other.data == nullptr) {
-            data = nullptr;
-            size = 0;
-            capacity = 0;
-            return;
+    class iterator {
+    private:
+        T* ptr;
+
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
+
+        iterator(T* p = nullptr) : ptr(p) {}
+
+        reference operator*() const {
+            return *ptr;
         }
-        size = other.size;
-        capacity = other.capacity;
-        data = new T[capacity];
-        std::copy(other.data, other.data + size, data);
-    }
 
-    vector(const size_t size, const T& obj) {
-        this->size = size;
-        capacity = size;
-        data = new T[size];
-        for (size_t i = 0; i < size; i++) {
-            data[i] = obj;
+        pointer operator->() const {
+            return ptr;
         }
-    }
 
-    vector(size_t size, T* arr) {
-        this->size = size;
-        capacity = size;
-        data = new T[size];
-        std::copy(arr, arr + size, data);
-    }
-
-    ~vector() {
-        delete[] data;
-    }
-
-    vector& operator=(const vector& other) {
-        if (this == &other) {
+        iterator& operator++() {
+            ++ptr;
             return *this;
         }
 
-        if (capacity >= other.size) {
-            size = other.size;
-            std::copy(other.data, other.data + other.size, data);
+        iterator operator++(int) {
+            iterator temp(*this);
+            ++ptr;
+            return temp;
         }
-        else {
-            delete[] data;
-            size = other.size;
-            capacity = other.capacity;
-            data = new T[capacity];
-            std::copy(other.data, other.data + other.size, data);
+
+        iterator& operator--() {
+            --ptr;
+            return *this;
+        }
+
+        iterator operator--(int) {
+            iterator temp(*this);
+            --ptr;
+            return temp;
+        }
+
+        iterator operator+(difference_type n) const {
+            return iterator(ptr + n);
+        }
+
+        iterator operator-(difference_type n) const {
+            return iterator(ptr - n);
+        }
+
+        difference_type operator-(const iterator& other) const {
+            return ptr - other.ptr;
+        }
+
+        iterator& operator+=(difference_type n) {
+            ptr += n;
+            return *this;
+        }
+
+        iterator& operator-=(difference_type n) {
+            ptr -= n;
+            return *this;
+        }
+
+        reference operator[](difference_type n) const {
+            return *(ptr + n);
+        }
+
+        bool operator==(const iterator& other) const {
+            return ptr == other.ptr;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return ptr != other.ptr;
+        }
+
+        bool operator<(const iterator& other) const {
+            return ptr < other.ptr;
+        }
+
+        bool operator>(const iterator& other) const {
+            return ptr > other.ptr;
+        }
+
+        bool operator<=(const iterator& other) const {
+            return ptr <= other.ptr;
+        }
+
+        bool operator>=(const iterator& other) const {
+            return ptr >= other.ptr;
+        }
+    };
+
+    vector() : arr(nullptr), sz(0), cap(0) {}
+
+    vector(size_t n, const T& value) {
+        sz = n;
+        cap = n;
+        arr = new T[cap];
+        for (size_t i = 0; i < sz; ++i) {
+            arr[i] = value;
+        }
+    }
+
+    vector(const vector& other) {
+        sz = other.sz;
+        cap = other.cap;
+        arr = new T[cap];
+        for (size_t i = 0; i < sz; ++i) {
+            arr[i] = other.arr[i];
+        }
+    }
+
+    ~vector() {
+        delete[] arr;
+    }
+
+    vector& operator=(const vector& other) {
+        if (this != &other) {
+            delete[] arr;
+            sz = other.sz;
+            cap = other.cap;
+            arr = new T[cap];
+            for (size_t i = 0; i < sz; ++i) {
+                arr[i] = other.arr[i];
+            }
         }
         return *this;
     }
 
-    T& operator[](size_t ind) {
-        return data[ind];
+    T& operator[](size_t index) {
+        return arr[index];
     }
 
-    T& at(size_t ind) {
-        if (ind < size) {
-            return data[ind];
+    const T& operator[](size_t index) const {
+        return arr[index];
+    }
+
+    T& at(size_t index) {
+        if (index >= sz) {
+            throw std::out_of_range("Index out of range");
         }
-        else {
-            throw std::out_of_range("Index is out of range\n");
+        return arr[index];
+    }
+
+    const T& at(size_t index) const {
+        if (index >= sz) {
+            throw std::out_of_range("Index out of range");
         }
+        return arr[index];
     }
 
     T& front() {
-        if (size == 0) {
-            throw std::out_of_range("Vector is empty\n");
+        if (empty()) {
+            throw std::out_of_range("Vector is empty");
         }
-        return data[0];
+        return arr[0];
     }
 
     T& back() {
-        if (size == 0) {
-            throw std::out_of_range("Vector is empty\n");
+        if (empty()) {
+            throw std::out_of_range("Vector is empty");
         }
-        return data[size - 1];
+        return arr[sz - 1];
     }
 
-    T* Data() const {
-        return data;
+    T* data() {
+        return arr;
+    }
+
+    iterator begin() {
+        return iterator(arr);
+    }
+
+    iterator end() {
+        return iterator(arr + sz);
     }
 
     bool empty() const {
-        if (size == 0) {
-            return true;
-        }
-        return false;
+        return sz == 0;
     }
 
-    size_t Size() const {
-        return size;
+    size_t size() const {
+        return sz;
     }
 
-    void reserve(size_t new_cp) {
-        if (new_cp > capacity) {
-            T* arr = new T[new_cp];
-            std::copy(data, data + size, arr);
-            delete[] data;
-            data = arr;
-            capacity = new_cp;
+    size_t capacity() const {
+        return cap;
+    }
+
+    void reserve(size_t new_cap) {
+        if (new_cap <= cap) {
+            return;
         }
+
+        T* new_arr = new T[new_cap];
+        for (size_t i = 0; i < sz; ++i) {
+            new_arr[i] = arr[i];
+        }
+
+        delete[] arr;
+        arr = new_arr;
+        cap = new_cap;
     }
 
     void clear() {
-        size = 0;
+        sz = 0;
     }
 
-    void push_back(T value) {
-        if (size < capacity) {
-            data[size] = value;
-            size++;
-        }
-        else if (size == capacity) {
-            if (size == 0) {
-                size = 1;
-                capacity = 1;
-                data = new T[capacity];
-                data[0] = value;
-            }
-            else {
-                capacity = 2 * size;
-                T* arr = new T[capacity];
-                std::copy(data, data + size, arr);
-                delete[] data;
-                data = arr;
-                data[size] = value;
-                size++;
+    void push_back(const T& value) {
+        if (sz == cap) {
+            if (cap == 0) {
+                reserve(1);
+            } else {
+                reserve(cap * 2);
             }
         }
+        arr[sz] = value;
+        ++sz;
     }
 
     void pop_back() {
-        if (size == 0) {
-            throw std::out_of_range("Vector is empty\n");
+        if (empty()) {
+            throw std::out_of_range("Vector is empty");
         }
-        size--;
+        --sz;
     }
 
-    size_t Capacity() const {
-        return capacity;
+    iterator insert(iterator pos, const T& value) {
+        size_t index = pos - begin();
+
+        if (index > sz) {
+            throw std::out_of_range("Invalid position");
+        }
+
+        if (sz == cap) {
+            if (cap == 0) {
+                reserve(1);
+            } else {
+                reserve(cap * 2);
+            }
+        }
+
+        for (size_t i = sz; i > index; --i) {
+            arr[i] = arr[i - 1];
+        }
+
+        arr[index] = value;
+        ++sz;
+
+        return iterator(arr + index);
     }
 
     void swap(vector& other) {
-        std::swap(this->data, other.data);
-        std::swap(this->size, other.size);
-        std::swap(this->capacity, other.capacity);
+        std::swap(arr, other.arr);
+        std::swap(sz, other.sz);
+        std::swap(cap, other.cap);
     }
 };
 
 int main() {
+    return 0;
 }
