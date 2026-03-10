@@ -1,283 +1,209 @@
 #include <iostream>
-#include <algorithm>
-
+#include <cstddef>
+#include <stdexcept>
+#include <utility>
 
 class String {
 private:
-    char* data;
+    char* data_;
+    std::size_t size_;
 
-    size_t len(const char* str) const {
-        size_t len = 0;
-        while (str[len]!='\0') {
-            len++;
-        }
-        return len;
-    }
-
-    void copy(char* dest, const char* from) {
-        for (int i = 0; i < len(from); i++) {
-            dest[i] = from[i];
-        }
-        dest[len(from)] = '\0';
-    }
 public:
-    String() {
-        data = new char[1];
-        data[0] = '\0';
+    String() : data_(new char[1]), size_(0) {
+        data_[0] = '\0';
     }
-    String(const String& other) {
-        data = new char[len(other.data)+1];
-        copy(data,other.data);
-    }
-    String(const char* data) {
-        if (data==nullptr) {
-            std::cerr << "Error-строка не может быть nullptr" << '\n';
-            std::exit(-1);
-        }
-        this->data = new char[len(data)+1];
-        copy(this->data, data);
-    }
-    ~String() {
-        delete[] data;
-    }
-    String& operator=(const String& other) {
-        data = new char[len(other.data)+1];
-        copy(data,other.data);
-        return *this;
-    }
-    String& operator+=(const String& other) {
-        char* temp = new char[len(data)+1];
-        copy(temp,data);
-        delete [] data;
-        data = new char[len(temp)+len(other.data)+1];
-        for (int i = 0, j = 0; i<len(temp)+len(other.data); i++) {
-            if (i<len(temp)) {
-                data[i] = temp[i];
-            }
-            else {
-                data[i] = other.data[j];
-                j++;
-            }
-        }
-        this->data[len(temp)+len(other.data)]='\0';
-        delete [] temp;
-        return *this;
-    }
-    String& operator*=(unsigned int m) {
-        char* temp = new char[len(data)+1];
-        copy(temp,data);
-        delete [] data;
-        data = new char[len(temp)*m+1];
-        for (int i = 0, j = 0; i < len(temp)*m; i++) {
-            if ((i+1)%len(temp)!=0) {
-                data[i]=temp[j];
-                j++;
-            }
-            else {
-                data[i]=temp[j];
-                j=0;
-            }
-        }
-        data[len(temp)*m] = '\0';
-        delete [] temp;
-        return *this;
-    }
-    bool operator==(const String& other) const {
-        if (len(data)!=len(other.data)) {
-            return 0;
-        }
-        int count = 0;
-        for (int i = 0; i < len(data); i++) {
-            if (data[i]==other.data[i]) {
-                count++;
-            }
-        }
-        if (count==len(data)) {
-            return 1;
-        }
-        return 0;
-    }
-    bool operator<(const String& other) const {
-        if (*this==other){return 0;}
-        int min = std::min(len(data),len(other.data));
-        for (int i = 0; i < min; i++) {
-            if (data[i]<other.data[i]) {
-                return 1;
-            }
-        }
-        if (len(data)<len(other.data)) {
-            return 1;
-        }
-        return 0;
-    }
-    int Find(const String& substr) const {
-        if (len(data)<len(substr.data)) {
-            std::cerr << "Error - длина подстроки не может быть больше строки" << '\n';
-            return -1;
-        }
-        bool cap;
-        for (int i = 0; i < len(data)-len(substr.data)+1;i++) {
-            cap = 1;
-            for (int j = 0; j < len(substr.data); j++) {
-                if (data[i+j] != substr.data[j]) {
-                    cap = 0;
-                    break;
-                }
-            }
-            if (cap){return i;}
-        }
-        return -1;
-    }
-    void Replace(char oldSymbol, char newSymbol) {
-        if (!std::count(data,data+len(data),oldSymbol)) {
-            std::cerr << "Error - такого символа нет в строке" << '\n';
-            std::exit(-1);
-        }
-        char* temp = new char[len(data)+1];
-        copy(temp,data);
-        if (data!=nullptr) {
-            delete [] data;
-        }
-        data = new char[len(temp)+1];
-        for (int i = 0; i < len(temp); i++) {
-            if (temp[i]==oldSymbol) {
-                data[i] = newSymbol;
-            }
-            else {
-                data[i] = temp[i];
-            }
-        }
-        data[len(temp)] = '\0';
-        delete [] temp;
-    }
-    size_t Size() const {
-        return len(data);
-    }
-    bool Empty() const {
-        if (len(data)==0){return true;}
-        return false;
 
+    String(const char* str) {
+        if (str == nullptr) {
+            size_ = 0;
+            data_ = new char[1];
+            data_[0] = '\0';
+            return;
+        }
+
+        std::size_t len = 0;
+        while (str[len] != '\0') {
+            ++len;
+        }
+
+        size_ = len;
+        data_ = new char[size_ + 1];
+        for (std::size_t i = 0; i < size_; ++i) {
+            data_[i] = str[i];
+        }
+        data_[size_] = '\0';
     }
-    char operator[](size_t index) const {
-        if (index<len(data)) {
-            return data[index];
+
+    String(const String& other) : data_(new char[other.size_ + 1]), size_(other.size_) {
+        for (std::size_t i = 0; i < size_; ++i) {
+            data_[i] = other.data_[i];
         }
-        else {
-            std::cerr << "Index is out of range" << '\n';
-            std::exit(-1);
-        }
+        data_[size_] = '\0';
     }
-    char& operator[](size_t index) {
-        if (index<len(data)) {
-            char& ch_link=data[index];
-            return ch_link;
-        }
-        else {
-            std::cerr << "Index is out of range" << '\n';
-            std::exit(-1);
-        }
+
+    String(String&& other) noexcept : data_(other.data_), size_(other.size_) {
+        other.data_ = new char[1];
+        other.data_[0] = '\0';
+        other.size_ = 0;
     }
-    void RTrim(char symbol) {
-        size_t count=0;
-        for (int i = len(data)-1; i>=0; i--) {
-            if (data[i]==symbol) {
-                count++;
+
+    ~String() {
+        delete[] data_;
+    }
+
+    String& operator=(const String& other) {
+        if (this != &other) {
+            char* new_data = new char[other.size_ + 1];
+            for (std::size_t i = 0; i < other.size_; ++i) {
+                new_data[i] = other.data_[i];
             }
-            else {break;}
+            new_data[other.size_] = '\0';
+
+            delete[] data_;
+            data_ = new_data;
+            size_ = other.size_;
         }
-        if (!count) {
-            std::cerr<<"Такого символа нет."<<'\n';
-            std::exit(-1);
-        }
-        char* temp = new char[len(data)+1];
-        copy(temp,data);
-        data = new char[len(temp)-count+1];
-        for (int j = 0; j < len(temp)-count; j++) {
-            data[j] = temp[j];
-        }
-        data[len(temp)-count] = '\0';
-        delete [] temp;
+        return *this;
     }
-    void LTrim(char symbol) {
-        size_t count=0;
-        for (int i = 0; i<len(data)-1; i++) {
-            if (data[i]==symbol) {
-                count++;
+
+    String& operator=(String&& other) noexcept {
+        if (this != &other) {
+            delete[] data_;
+
+            data_ = other.data_;
+            size_ = other.size_;
+
+            other.data_ = new char[1];
+            other.data_[0] = '\0';
+            other.size_ = 0;
+        }
+        return *this;
+    }
+
+    std::size_t Size() const {
+        return size_;
+    }
+
+    const char* CStr() const {
+        return data_;
+    }
+
+    void PushBack(char ch) {
+        char* new_data = new char[size_ + 2];
+
+        for (std::size_t i = 0; i < size_; ++i) {
+            new_data[i] = data_[i];
+        }
+
+        new_data[size_] = ch;
+        new_data[size_ + 1] = '\0';
+
+        delete[] data_;
+        data_ = new_data;
+        ++size_;
+    }
+
+    void Clear() {
+        delete[] data_;
+        data_ = new char[1];
+        data_[0] = '\0';
+        size_ = 0;
+    }
+
+    char& operator[](std::size_t index) {
+        if (index >= size_) {
+            throw std::out_of_range("Index out of range");
+        }
+        return data_[index];
+    }
+
+    const char& operator[](std::size_t index) const {
+        if (index >= size_) {
+            throw std::out_of_range("Index out of range");
+        }
+        return data_[index];
+    }
+
+    bool operator==(const String& other) const {
+        if (size_ != other.size_) {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < size_; ++i) {
+            if (data_[i] != other.data_[i]) {
+                return false;
             }
-            else {break;}
         }
-        if (!count) {
-            std::cerr<<"Такого символа нет."<<'\n';
-            std::exit(-1);
-        }
-        char* temp = new char[len(data)+1];
-        copy(temp,data);
-        data = new char[len(temp)-count+1];
-        for (int j = 0; j < len(temp)-count; j++) {
-            data[j] = temp[j+count];
-        }
-        data[len(temp)-count] = '\0';
-        delete [] temp;
+        return true;
     }
-    void swap(String& oth) {
-        String temp = *this;
-        *this = oth;
-        oth = temp;
+
+    bool operator!=(const String& other) const {
+        return !(*this == other);
     }
-    friend std::ostream& operator<<(std::ostream&, const String&);
+
+    friend std::ostream& operator<<(std::ostream& os, const String& str) {
+        os << str.data_;
+        return os;
+    }
 };
 
-std::ostream& operator<<(std::ostream& os, const String& str) {
-    os<<str.data;
-    return os;
-}
-String operator+(const String& a, const String& b) {
-    String New = a;
-    New+=b;
-    return New;
-}
-String operator*(const String& a, unsigned int b) {
-    String New = a;
-    New*=b;
-    return New;
-}
-bool operator!=(const String& a, const String& b) {
-    if (!(a==b)) {
-        return true;
-    }
-    return false;
-}
-bool operator>(const String& a, const String& b) {
-    if (!(a<b) && (a!=b)) {
-        return true;
-    }
-    return false;
-}
 int main() {
-    String str1 = "___string___";
-    String str1_copy = str1;
-    String str2 = "hello";
-    str1_copy+=str2;
-    std::cout<<"Строка 1:" << str1 << '\n';
-    std::cout<<"Строка 2:" << str2 << '\n';
-    std::cout<<"Конкатинация:"<<str1_copy<<'\n';
-    str2*=2;
-    std::cout<<"Строка 2 *= 2:" << str2 << '\n';
-    bool cap = str1==str2;
-    std::cout<<"Строка 2 == строка 1:"<<cap << '\n';
-    cap = str2 < str1;
-    std::cout<<"Строка 2 < строка 1:"<< cap << '\n';
-    std::cout<<"Найти в str1 подстр. string:"<< str1.Find("string") << '\n';
-    str2.Replace('l','9');
-    std::cout<<"Заменить в строке 2 'l' на '9':" << str2 << '\n';
-    std::cout << "Size of str1:" << str1.Size() << '\n';
-    std::cout << "Is str1 empty:" << str1.Empty() << '\n';
-    std::cout << "Str1[3]:" << str1[3] << '\n';
-    str1.RTrim('_');
-    std::cout << "Str1 Rtrim _:" << str1 << '\n';
-    str1.LTrim('_');
-    std::cout << "Str1 Ltrim _:" << str1 << '\n';
-    str1.swap(str2);
-    std::cout << "Str1 after swap:" << str1<<'\n';
-    std::cout << "Str2 after swap:" << str2<<'\n';
+    std::cout << "Конструктор по умолчанию \n";
+    String s1;
+    std::cout << "s1 = \"" << s1 << "\", size = " << s1.Size() << "\n\n";
+
+    std::cout << "Конструктор из const char* \n";
+    String s2("Hello");
+    std::cout << "s2 = \"" << s2 << "\", size = " << s2.Size() << "\n\n";
+
+    std::cout << "Конструктор копирования \n";
+    String s3(s2);
+    std::cout << "s3 = \"" << s3 << "\", size = " << s3.Size() << "\n\n";
+
+    std::cout << "Конструктор перемещения \n";
+    String s4(std::move(s2));
+    std::cout << "s4 = \"" << s4 << "\", size = " << s4.Size() << "\n";
+    std::cout << "s2 после move = \"" << s2 << "\", size = " << s2.Size() << "\n\n";
+
+    std::cout << " PushBack \n";
+    s4.PushBack('!');
+    std::cout << "s4 = \"" << s4 << "\", size = " << s4.Size() << "\n\n";
+
+    std::cout << "operator[] \n";
+    s4[0] = 'h';
+    std::cout << "s4 после изменения = \"" << s4 << "\"\n\n";
+
+    std::cout << "Копирующее присваивание \n";
+    s1 = s4;
+    std::cout << "s1 = \"" << s1 << "\", size = " << s1.Size() << "\n\n";
+
+    std::cout << "Перемещающее присваивание \n";
+    String s5("World");
+    std::cout << "s5 до move = \"" << s5 << "\"\n";
+    s5 = std::move(s4);
+    std::cout << "s5 после move = \"" << s5 << "\", size = " << s5.Size() << "\n";
+    std::cout << "s4 после move = \"" << s4 << "\", size = " << s4.Size() << "\n\n";
+
+    std::cout << " Сравнение \n";
+    String s6("hello!");
+    std::cout << "s5 = \"" << s5 << "\"\n";
+    std::cout << "s6 = \"" << s6 << "\"\n";
+    std::cout << "s5 == s6 -> " << (s5 == s6 ? "true" : "false") << "\n";
+    std::cout << "s5 != s6 -> " << (s5 != s6 ? "true" : "false") << "\n\n";
+
+    std::cout << "CStr\n";
+    std::cout << "s5.CStr() = " << s5.CStr() << "\n\n";
+
+    std::cout << "Clear\n";
+    s6.Clear();
+    std::cout << "s6 = \"" << s6 << "\", size = " << s6.Size() << "\n\n";
+
+    std::cout << "Проверка выхода за границы \n";
+    try {
+        std::cout << s5[100] << "\n";
+    } catch (const std::out_of_range& e) {
+        std::cout << "Ошибка: " << e.what() << "\n";
+    }
+
+    return 0;
 }
